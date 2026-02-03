@@ -7,5 +7,12 @@
   "runtime.special": {
     "love.filesystem.load": "loadfile"
   },
-  "workspace.checkThirdParty": false
+  "workspace.checkThirdParty": false,
+    "diagnostics.globals": [
+        "log",
+        "lume",
+        "vector",
+        "vec2",
+        "const"
+    ]
 }

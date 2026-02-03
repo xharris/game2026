@@ -4,6 +4,7 @@ lume = require 'lib.lume'
 vector = require 'lib.vector'
 log = require 'lib.log'
 vec2 = vector.new
+const = require 'const'
 
 local api = require 'api'
 local entity = require 'entity'
@@ -52,7 +53,7 @@ function love.load()
     player.controller_id = 1
     player.pos:set(30, 30)
     player.hurtbox = {r=12}
-    player.friction = 0.15
+    player.friction = const.FRICTION.NORMAL
     player.move_speed = 800
     player.max_speed = 100
 
@@ -60,10 +61,17 @@ function love.load()
     local enemy = api.entity.new()
     enemy.tag = 'enemy'
     enemy.body = {r=15, weight=1}
-    enemy.pos:set(120, 120)
+    enemy.pos:set(400, 300)
     enemy.hurtbox = {r=12}
-    enemy.hp = 3
-    enemy.friction = 0.15
+    enemy.hp = 30
+    enemy.friction = const.FRICTION.NORMAL
+    enemy.move_speed = 800
+    enemy.max_speed = 50
+    enemy.ai = {
+        patrol_radius=200,
+        vision_radius=200,
+        patrol_cooldown=3
+    }
 
     log.info('load end')
 end

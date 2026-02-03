@@ -32,6 +32,15 @@ entity = {
 ---@field pierce? boolean
 ---@field on_hit fun(target:Entity, me:Entity, delta: Vector.lua)
 
+---@class Ai
+---@field state? 'patrol'|'chase'
+---@field vision_radius number
+---@field patrol_radius number
+---@field patrol_cooldown? number
+---@field path_to? Vector.lua
+---@field patrol_timer? number
+---@field chase_to? Vector.lua
+
 ---@class Entity
 ---@field queue_free? boolean remove from system
 ---@field tag string
@@ -48,15 +57,21 @@ entity = {
 ---@field hurtbox? Shape
 ---@field hitbox? Shape
 ---@field magic? string[]
+---@field ai? Ai
+---@field stun_timer? number
 
 local push = lume.fn(love.graphics.push, 'all')
 local pop = love.graphics.pop
 local set_color = love.graphics.setColor
 local circle = love.graphics.circle
 local translate = love.graphics.translate
+local rectangle = love.graphics.rectangle
 local lerp = lume.lerp
 local abs = math.abs
 local clamp = lume.clamp
+local round = lume.round
+local rad = math.rad
+local min = math.min
 
 M.world_body = hc.new(64)
 M.world_hitbox = hc.new(64)
@@ -66,8 +81,10 @@ local new_hc_world = function(size)
     size = size or 64
     local world = hc.new(size)
     local shapes = weakkeys()
+    local all_bodies = {}
     return {
         world = world,
+        all = all_bodies,
         ---@param e Entity
         ---@param shape Shape
         ---@param pos? Vector.lua
@@ -80,6 +97,7 @@ local new_hc_world = function(size)
                 shapes[shape] = body
             end
             body._entity = e
+            lume.push(all_bodies, body)
             return body
         end,
         ---@param shape Shape
@@ -91,6 +109,11 @@ local new_hc_world = function(size)
             shapes[shape] = nil
             if body then
                 world:remove(body)
+            end
+            for i, b in lume.ripairs(all_bodies) do
+                if b == body then
+                    table.remove(all_bodies, i)
+                end
             end
         end,
         ---@param shape Shape
@@ -105,6 +128,26 @@ local hc_hitbox = new_hc_world()
 local hc_hurtbox = hc_hitbox
 
 local hitbox_hit = weakkeys()
+---@type table<any, Entity>
+local chase_entity = weakkeys()
+
+---@param me Entity
+---@param other_body any body
+---@return Entity? other
+local can_see = function(me, other_body)
+    local ai = me.ai
+    ---@type Entity?
+    local other = other_body._entity
+    if ai and other and other ~= me and 
+        abs((me.pos - other.pos):getmag()) <= ai.vision_radius and
+        other_body:intersectsRay(
+            me.pos.x, me.pos.y, 
+            other.pos.x - me.pos.x, other.pos.y - me.pos.y
+        )
+    then
+        return other
+    end
+end
 
 local input = baton.new{
     controls = {
@@ -147,9 +190,6 @@ M.update = function(dt)
                 -- controller input
                 -- move direction
                 movex, movey = input:get 'move'
-                -- acceleration
-                e.accel.x = movex * e.move_speed
-                e.accel.y = movey * e.move_speed
                 -- aim direction
                 local aimx, aimy = 0, 0
                 if input:getActiveDevice() == 'joy' then
@@ -164,9 +204,85 @@ M.update = function(dt)
                     api.entity.signal_primary.emit(e)
                 end
             end
+            local ai = e.ai
+            if ai then
+                local state = ai.state
+                if not state then
+                    state = 'patrol'
+                end
+                local chase = chase_entity[e.ai]
+                if not chase then
+                    for _, body in ipairs(hc_body.all) do
+                        -- within chase range?
+                        local other = can_see(e, body)
+                        if other then
+                            log.debug("i see", other.tag)
+                            chase = other
+                            chase_entity[e.ai] = chase
+                            state = 'chase'
+                            break
+                        end
+                    end
+                end
+                if state == 'chase' and chase and chase.body then
+                    -- path towards last seen position
+                    local other_body = hc_body.get(chase, chase.body)
+                    if can_see(e, other_body) then
+                        ai.path_to = chase.pos:clone()
+                    end
+                end
+                if state == 'patrol' then
+                    if ai.patrol_timer then
+                        -- on cooldown
+                        ai.patrol_timer = ai.patrol_timer - dt
+                        if ai.patrol_timer <= 0 then
+                            -- cooldown finished
+                            ai.patrol_timer = nil
+                        end
+                    end
+                    if not ai.path_to and not ai.patrol_timer and ai.patrol_radius > 0 then
+                        -- pick new target location
+                        local dir = vector.fromAngle(rad(lerp(0, 360, love.math.random())))
+                        ai.path_to = e.pos + (dir * ai.patrol_radius)
+                    end
+                end
+                local to = ai.path_to
+                if to then
+                    local move_dir = to - e.pos
+                    if move_dir:getmag() > 10 then
+                        -- path to target
+                        movex, movey = move_dir:norm():unpack()
+                    else
+                        -- arrived, go on cooldown
+                        ai.path_to = nil
+                        ai.patrol_timer = ai.patrol_cooldown or 0
+                        state = 'patrol'
+                    end
+                end
+                ai.state = state
+            end
+            -- stunned
+            if e.stun_timer then
+                if e.stun_timer <= 0 then
+                    e.stun_timer = nil
+                else
+                    e.stun_timer = e.stun_timer - dt
+                    movex = 0
+                    movey = 0
+                end
+            end
+            if e.move_speed then
+                -- apply movement to acceleration
+                e.accel.x = movex * e.move_speed
+                e.accel.y = movey * e.move_speed
+            end
             -- friction (only when not accelerating)
-            if e.friction and e.accel:getmag() == 0 then
-                local damping = math.pow(1 - e.friction, dt * 60)
+            local f = e.friction
+            if f and e.accel:getmag() == 0 then
+                if e.stun_timer then
+                    f = min(f, const.FRICTION.STUNNED)
+                end
+                local damping = math.pow(1 - f, dt * 60)
                 e.vel.x = e.vel.x * damping
                 e.vel.y = e.vel.y * damping
             end
@@ -252,7 +368,13 @@ end
 M.draw = function()
     for _, e in ipairs(api.entity.entities) do
         push()
-        translate(e.pos.x, e.pos.y)
+        translate(round(e.pos.x), round(e.pos.y))
+        -- draw ai vision
+        local ai = e.ai
+        if ai and ai.vision_radius then
+            set_color(lume.color(mui.YELLOW_500))
+            circle('line', 0, 0, ai.vision_radius)
+        end
         -- draw body
         local body = e.body
         if body then
@@ -269,8 +391,18 @@ M.draw = function()
             set_color(lume.color(mui.RED_500))
             circle("fill", 0, 0, hitbox.r)
         end
+        -- draw ai pathing
+        local to = ai and ai.path_to or nil
+        if to then
+            push()
+            love.graphics.origin()
+            set_color(lume.color(mui.YELLOW_200))
+            local size = 7
+            rectangle('line', to.x - (size/2), to.y - (size/2), size, size)
+            pop()
+        end
         -- draw aim
-        circle("line", e.aim_dir.x * 30, e.aim_dir.y * 30, 3)
+        circle("line", round(e.aim_dir.x * 30), round(e.aim_dir.y * 30), 3)
         pop()
     end
 end

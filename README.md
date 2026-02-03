@@ -89,31 +89,63 @@ If you reach that point, you can **refactor gradually**.
 
 **Day 3**
 
-- Enemy AI state machine (`idle`, `patrol`, `chase`)
-- Patrol behavior (random or waypoint)
-- Chase behavior
-- Raycasting / LOS using bump (`querySegment` or thin sweep)
-- Debug AI state + rays
+- [x] Enemy AI state machine (`idle`, `patrol`, `chase`)
+  - [x] Patrol behavior
+    - [x] random
+    - [ ] waypoints
+  - [x] Chase behavior
+    - [x] Raycasting / LOS using bump (`querySegment` or thin sweep)
+- [x] Debug AI state + rays
 
 ---
 
 **Day 4**
 
-- Chunk image format (walls, spawns, magic)
-- Chunk loader (image → tiles, walls, spawns)
-- World chunk enter / exit logic
-- Simple procedural map layout (grid / random walk)
-- Room transitions
+- [ ] Camera system
+- [ ] Map
+  - Zone Image
+    - chunk -> white
+    - connection -> blue
+    - boss -> red: place chunk, but boss only spawns in one of them
+    - special chunk -> purple
+  - Chunk Image
+    - enemy spawn
+    - filler
+    - ground
+    - empty
+    - path
+  - WFC of CHUNKs restricted by ZONE image
+  - Special Chunk Image examples (extends Chunk Image), can be used for puzzles or whatever
+    - pressure plate
+    - box
+    - box with key
+    - door
+    - etc
+  - Config
+    - zone image
+    - chunks
+    - connected zones
+- [ ] Load/Activate chunk content when nearby
+- [ ] Deactivate chunk when far away
+- Maps
+  - [ ] Forest
+  - [ ] Dark Forest
 
 ---
 
 **Day 5**
 
-- Magic system (data-driven)
-- Status effects on entities
-- Magic sources in chunks
-- Magic-modified projectiles (fire, water, etc.)
-- Damage-over-time / on-hit effects
+- [x] Magic system (data-driven)
+- [ ] Status effects on entities
+- [ ] Magic sources in chunks
+- [ ] Magic-modified projectiles (fire, water, etc.)
+- [ ] Damage-over-time / on-hit effects
+- [ ] Checkpoint: save location
+- [ ] Respawn
+  - [ ] Red death screen
+  - [ ] Move player to checkpoint
+  - [ ] Remove enemies too close to checkpoint
+  - [ ] Extreme zoom out of player on spawn
 
 ---
 
@@ -139,3 +171,8 @@ If you reach that point, you can **refactor gradually**.
 ### Guiding Rule for the Week
 
 > **If a feature doesn’t clearly improve “move → shoot → room → enemy → reward”, cut it.**
+
+## Resources
+
+- [datamoshing](https://www.reddit.com/r/godot/comments/1buubf1/datamoshing_compositor_effect_for_godot_43/)
+- [water shader](https://www.cyanilux.com/tutorials/2d-water-shader-breakdown/)

@@ -1,5 +1,5 @@
 run:
-	love .
+	love . 2>&1 | tee logs.txt
 
 test:
-	love . | tee test_results.txt
+	love . 2>&1 | tee test_results.txt

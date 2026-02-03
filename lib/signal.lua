@@ -41,4 +41,16 @@ M.on = function (key, fn)
     lume.push(fns[key], fn)
 end
 
+M.new = function(key)
+    return {
+        emit = function (...)
+            return M.emit(key, ...)
+        end,
+        ---@param fn function
+        on = function(fn)
+            return M.on(key, fn)
+        end
+    }
+end
+
 return M

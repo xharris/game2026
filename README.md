@@ -69,21 +69,21 @@ If you reach that point, you can **refactor gradually**.
 
 **Day 1**
 
-- Project skeleton (`world`, `entity`, `player`)
-- Player movement (top-down)
-- Twin-stick aiming (mouse or stick)
-- Basic shooting (projectiles)
-- Wall collision using `body` collider (bump)
+- [x] Project skeleton (`world`, `entity`, `player`)
+- [x] Player movement (top-down)
+- [x] Twin-stick aiming (mouse or stick)
+- [x] Basic shooting (projectiles)
+- [x] Wall collision using `body` collider (bump)
 
 ---
 
 **Day 2**
 
-- Enemy entity
-- Enemy HP + death
-- Projectile → hurtbox damage
-- Basic knockback on hit
-- Cleanup on enemy death
+- [x] Projectile → hurtbox damage
+- [x] Enemy entity
+- [x] Enemy HP + death
+- [x] Basic knockback on hit
+- [x] Cleanup on enemy death
 
 ---
 

@@ -1,5 +1,5 @@
 {
-  "Lua.diagnostics.globals": ["log", "lume", "vector"],
+  "Lua.diagnostics.globals": ["log", "lume", "vector", "vec2"],
   "Lua.diagnostics.disable": ["undefined-field"],
   "editor.hover.delay": 750,
   "editor.quickSuggestionsDelay": 250

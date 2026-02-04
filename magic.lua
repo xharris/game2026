@@ -16,7 +16,7 @@ end
 M.missile = {
     on_hit = function (target, me)
         if target_is_owner(target, me) then return end
-        api.entity.take_damage(target, 1)
+        api.entity.take_damage(target, 3)
         -- knockback
         local knockback_dir = me.vel:norm()
         target.vel = knockback_dir * 300

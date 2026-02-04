@@ -11,6 +11,7 @@ E.signal_primary = signal.new 'entity_primary'
 ---@alias OnEntityHitboxCollide fun(me:Entity, other:Entity, delta:Vector.lua)
 E.signal_hitbox_collision = signal.new 'entity_hitbox_collision'
 
+---@alias OnEntityDied fun(me:Entity, cause?:Entity)
 E.signal_died = signal.new 'entity_died'
 
 ---@type Entity[]
@@ -42,11 +43,12 @@ end
 
 ---@param me Entity
 ---@param amt number
-E.take_damage = function(me, amt)
+---@param source? Entity
+E.take_damage = function(me, amt, source)
     log.debug(me.tag, 'took', amt, 'damage')
     me.hp = me.hp - amt
     if me.hp <= 0 then
-        E.signal_died.emit(me)
+        E.signal_died.emit(me, source)
         me.queue_free = true
     end
 end

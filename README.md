@@ -114,8 +114,11 @@ If you reach that point, you can **refactor gradually**.
     - zone image
     - chunks
     - connections: possible connecting zones
-- [ ] Load/Activate zone when nearby
-- [ ] Deactivate zone when far away
+- [x] Load/Activate zone when nearby
+- Tiles
+  - [x] Enemy spawn
+  - [ ] Filler
+- [ ] Water background color
 
 ---
 
@@ -154,6 +157,7 @@ If you reach that point, you can **refactor gradually**.
 - Visual feedback (hit flashes, death effects)
 - Bug fixing
 - Playtest + cut anything that doesn’t work
+- Culling
 
 ---
 

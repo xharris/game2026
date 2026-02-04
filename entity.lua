@@ -45,6 +45,15 @@ entity = {
 ---@class Camera
 ---@field weight number
 
+---@class EnemySpawn
+---@field enemies {name:string, weight?:number}[]
+---@field every number spawn enemy every X seconds
+---@field max_alive number
+---@field current_alive? number
+---@field timer? number
+
+---@class Cull TODO cull entity if its not close enough to the camera bounds
+
 ---@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'magic'
 
 ---@class Entity
@@ -65,6 +74,8 @@ entity = {
 ---@field stun_timer? number
 ---@field rect? {color?:string, fill?:boolean, w:number, h:number} draw a rectangle just cause
 ---@field camera? Camera
+---@field cull? Cull TODO
+---@field enemy_spawn? EnemySpawn
 
 local push = lume.fn(love.graphics.push, 'all')
 local pop = love.graphics.pop
@@ -241,7 +252,6 @@ M.update = function(dt)
                         -- within chase range?
                         local other = can_see(e, body)
                         if other then
-                            log.debug("i see", other.tag)
                             chase = other
                             chase_entity[e.ai] = chase
                             state = 'chase'

@@ -7,6 +7,7 @@ local bump = require 'lib.bump'
 local weakkeys = require 'lib.weakkeytable'
 local hc = require 'lib.hc'
 local api = require 'api'
+local camera = require 'camera'
 
 --[[
 entity = {
@@ -41,6 +42,9 @@ entity = {
 ---@field patrol_timer? number
 ---@field chase_to? Vector.lua
 
+---@class Camera
+---@field weight number
+
 ---@class Entity
 ---@field queue_free? boolean remove from system
 ---@field tag string
@@ -57,6 +61,8 @@ entity = {
 ---@field magic? string[]
 ---@field ai? Ai
 ---@field stun_timer? number
+---@field rect? {color?:string, fill?:boolean, w:number, h:number} draw a rectangle just cause
+---@field camera? Camera
 
 local push = lume.fn(love.graphics.push, 'all')
 local pop = love.graphics.pop
@@ -189,6 +195,10 @@ local input = baton.new{
 
 M.update = function(dt)
     input:update()
+
+    local camera_total_position = vec2()
+    local camera_total_weight = 0
+
     for i, e in lume.ripairs(api.entity.entities) do
         ---@cast e Entity
         if e.queue_free then
@@ -208,6 +218,7 @@ M.update = function(dt)
                     aimx, aimy = input:get 'aim'
                 else
                     local mouse = vec2(love.mouse.getPosition())
+                    mouse.x, mouse.y = camera.to_world(mouse.x, mouse.y)
                     aimx, aimy = (mouse - e.pos):unpack()
                 end
                 e.aim_dir:set(aimx, aimy):norm()
@@ -328,6 +339,12 @@ M.update = function(dt)
                     e.pos + e.vel * dt
                 )
             end
+            -- update camera
+            local cam = e.camera
+            if cam then
+                camera_total_position = camera_total_position + (e.pos * cam.weight)
+                camera_total_weight = camera_total_weight + cam.weight
+            end
             if e.hurtbox then
                 local hurtbox = hc_hurtbox.get(e, e.hurtbox)
                 hurtbox:moveTo(e.pos.x, e.pos.y)
@@ -356,12 +373,25 @@ M.update = function(dt)
             end
         end
     end
+
+    -- update camera position
+    if camera_total_weight > 0 then
+        camera.pos = camera_total_position / camera_total_weight
+        camera.pos.x = round(camera.pos.x)
+        camera.pos.y = round(camera.pos.y)
+    end
 end
 
 M.draw = function()
     for _, e in ipairs(api.entity.entities) do
         push()
         translate(round(e.pos.x), round(e.pos.y))
+        -- draw rect
+        local rect = e.rect
+        if rect then
+            set_color(lume.color(rect.color or '#ffffff'))
+            rectangle(rect.fill and 'fill' or 'line', -rect.w/2, -rect.h/2, rect.w, rect.h)
+        end
         -- draw ai vision
         local ai = e.ai
         if ai and ai.vision_radius then
@@ -395,7 +425,10 @@ M.draw = function()
             pop()
         end
         -- draw aim
-        circle("line", round(e.aim_dir.x * 30), round(e.aim_dir.y * 30), 3)
+        if e.aim_dir:getmag() > 0 then
+            set_color(lume.color(mui.BLUE_300))
+            circle("line", round(e.aim_dir.x * 30), round(e.aim_dir.y * 30), 3)
+        end
         pop()
     end
 end

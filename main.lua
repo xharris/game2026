@@ -10,6 +10,7 @@ local api = require 'api'
 local entity = require 'entity'
 local magic = require 'magic'
 local map = require 'map'
+local camera = require 'camera'
 
 ---@type OnEntityPrimary
 local on_entity_primary = function (e)
@@ -47,6 +48,8 @@ function love.load()
     api.entity.signal_primary.on(on_entity_primary)
     api.entity.signal_hitbox_collision.on(on_entity_hitbox_collision)
 
+    map.new('map/forest/forest.png')
+
     -- add player
     local player = api.entity.new()
     player.tag = 'player'
@@ -54,23 +57,8 @@ function love.load()
     player.controller_id = 1
     player.pos:set(30, 30)
     player.hurtbox = {r=12}
-    player.friction = const.FRICTION.NORMAL
     player.move_speed = 120
-
-    -- add enemy
-    local enemy = api.entity.new()
-    enemy.tag = 'enemy'
-    enemy.body = {r=15, weight=1}
-    enemy.pos:set(400, 300)
-    enemy.hurtbox = {r=12}
-    enemy.hp = 30
-    -- enemy.friction = const.FRICTION.NORMAL
-    enemy.move_speed = 50
-    enemy.ai = {
-        patrol_radius=200,
-        vision_radius=200,
-        patrol_cooldown=3
-    }
+    player.camera = {weight=1}
 
     log.info('load end')
 end
@@ -80,7 +68,9 @@ function love.update(dt)
 end
 
 function love.draw()
+    camera.push()
     entity.draw()
+    camera.pop()
 end
 
 local function error_printer(msg, layer)

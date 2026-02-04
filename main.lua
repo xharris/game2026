@@ -43,6 +43,56 @@ local on_entity_hitbox_collision = function (me, other, delta)
     end
 end
 
+local created_zones = {}
+
+---@param zone string
+---@param offset? Vector.lua
+local load_zone = function(zone, offset)
+    local size = 16
+    offset = offset or vec2()
+    if created_zones[zone..tostring(offset)] then
+        return
+    end
+    created_zones[zone..tostring(offset)] = true
+    local tiles = map.load(zone, {
+        filler      = '#a5a5a7',
+        path        = '#ffffff',
+        special     = '#d186df',
+        enemy_spawn = '#fe5b59',
+        zone        = '#57b9f2',
+    })
+
+    ---@type MapTile[]
+    local zone_tiles = {}
+    ---@type Entity[]
+    local entities = {}
+    for _, tile in ipairs(tiles) do
+        local e = api.entity.new()
+        e.pos = tile.pos * size
+        e.pos = e.pos
+        e.tag = tile.layer
+        e.rect = {
+            fill = true,
+            color = tile.color,
+            w=size,
+            h=size,
+        }
+        if e.tag == 'zone' then
+            lume.push(zone_tiles, tile)
+        end
+        lume.push(entities, e)
+    end
+
+    -- offset by random zone marker
+    local zone = lume.randomchoice(zone_tiles)
+    if zone then
+        offset = offset - (zone.pos * size)
+    end
+    for _, e in ipairs(entities) do
+        e.pos = e.pos + offset
+    end
+end
+
 function love.load()
     log.serialize = lume.serialize
     log.info('load begin')
@@ -50,10 +100,10 @@ function love.load()
     api.entity.signal_primary.on(on_entity_primary)
     api.entity.signal_hitbox_collision.on(on_entity_hitbox_collision)
 
-    map.new('map/forest/forest.png')
+    load_zone('map/forest/forest.png')
 
-    local checkpoints = api.entity.find_by_tag('checkpoint')
-    local player_spawn = lume.randomchoice(checkpoints)
+    local zones = api.entity.find_by_tag('zone')
+    local player_spawn = lume.randomchoice(zones)
     if not player_spawn then
         log.error("could not find a player spawn")
     else
@@ -73,6 +123,17 @@ function love.load()
 end
 
 function love.update(dt)
+    local players = api.entity.find_by_tag 'player'
+    local zones = api.entity.find_by_tag 'zone'
+    for _, p in ipairs(players) do
+        for _, z in ipairs(zones) do
+            local dist = (p.pos - z.pos):getmag()
+            if dist < 30 then
+                load_zone('map/forest/forest.png', z.pos)
+            end
+        end
+    end
+
     entity.update(dt)
 end
 

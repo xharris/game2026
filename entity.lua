@@ -45,7 +45,7 @@ entity = {
 ---@class Camera
 ---@field weight number
 
----@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'checkpoint'|'magic'
+---@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'magic'
 
 ---@class Entity
 ---@field queue_free? boolean remove from system

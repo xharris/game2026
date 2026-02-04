@@ -102,20 +102,9 @@ If you reach that point, you can **refactor gradually**.
 **Day 4**
 
 - [x] Camera system
-- [ ] Map
-  - Zone Image
-    - chunk -> white
-    - zone -> blue
-    - boss -> red: place chunk, but boss only spawns in one of them
-    - special chunk -> purple
-  - Chunk Image
-    - enemy spawn
-    - filler
-    - ground
-    - empty
-    - path
-  - WFC of CHUNKs restricted by ZONE image
-  - Special Chunk Image examples (extends Chunk Image), can be used for puzzles or whatever
+- [x] Map
+  - zone
+  - special, can be used for puzzles or whatever
     - pressure plate
     - box
     - box with key
@@ -124,12 +113,9 @@ If you reach that point, you can **refactor gradually**.
   - Config
     - zone image
     - chunks
-    - connected zones
-- [ ] Load/Activate chunk content when nearby
-- [ ] Deactivate chunk when far away
-- Maps
-  - [ ] Forest
-  - [ ] Dark Forest
+    - connections: possible connecting zones
+- [ ] Load/Activate zone when nearby
+- [ ] Deactivate zone when far away
 
 ---
 
@@ -160,6 +146,9 @@ If you reach that point, you can **refactor gradually**.
 
 **Day 7**
 
+- Maps
+  - [x] Forest
+  - [ ] Dark Forest
 - Wall lighting polish (cheap gradients / edge highlights)
 - Balance pass (enemy speed, damage, magic)
 - Visual feedback (hit flashes, death effects)

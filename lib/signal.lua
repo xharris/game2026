@@ -7,13 +7,13 @@ local signal = require 'src.signal'
 
 signal.emit('myevent', 1, {'thing'})
 signal.on('myevent', function(num, stringlist)
-    return true -- remove connection
+    return true -- remove zone
 end)
 
 ]]
 }
 
----@alias SignalFn fun(...):boolean? return true to remove the connection
+---@alias SignalFn fun(...):boolean? return true to remove the zone
 
 ---@type table<string, SignalFn[]>
 local fns = {}

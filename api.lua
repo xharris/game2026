@@ -51,6 +51,18 @@ E.take_damage = function(me, amt)
     end
 end
 
+---@param tag EntityTag
+E.find_by_tag = function(tag)
+    ---@type Entity[]
+    local out = {}
+    for _, e in ipairs(E.entities) do
+        if e.tag == tag then
+            lume.push(out, e)
+        end
+    end
+    return out
+end
+
 M.entity = E
 
 return M

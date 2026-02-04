@@ -1,5 +1,7 @@
 io.stdout:setvbuf("no")
 
+math.random = love.math.random
+
 lume = require 'lib.lume'
 vector = require 'lib.vector'
 log = require 'lib.log'
@@ -50,15 +52,22 @@ function love.load()
 
     map.new('map/forest/forest.png')
 
-    -- add player
-    local player = api.entity.new()
-    player.tag = 'player'
-    player.body = {r=15, weight=1}
-    player.controller_id = 1
-    player.pos:set(30, 30)
-    player.hurtbox = {r=12}
-    player.move_speed = 120
-    player.camera = {weight=1}
+    local checkpoints = api.entity.find_by_tag('checkpoint')
+    local player_spawn = lume.randomchoice(checkpoints)
+    if not player_spawn then
+        log.error("could not find a player spawn")
+    else
+        log.info("spawn player", player_spawn.pos)
+        -- add player
+        local player = api.entity.new()
+        player.tag = 'player'
+        player.body = {r=15, weight=1}
+        player.controller_id = 1
+        player.pos:set(player_spawn.pos)
+        player.hurtbox = {r=12}
+        player.move_speed = 120
+        player.camera = {weight=1}
+    end
 
     log.info('load end')
 end
@@ -69,7 +78,9 @@ end
 
 function love.draw()
     camera.push()
+
     entity.draw()
+
     camera.pop()
 end
 

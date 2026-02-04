@@ -101,11 +101,11 @@ If you reach that point, you can **refactor gradually**.
 
 **Day 4**
 
-- [ ] Camera system
+- [x] Camera system
 - [ ] Map
   - Zone Image
     - chunk -> white
-    - connection -> blue
+    - zone -> blue
     - boss -> red: place chunk, but boss only spawns in one of them
     - special chunk -> purple
   - Chunk Image

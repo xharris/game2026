@@ -45,9 +45,11 @@ entity = {
 ---@class Camera
 ---@field weight number
 
+---@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'checkpoint'|'magic'
+
 ---@class Entity
 ---@field queue_free? boolean remove from system
----@field tag string
+---@field tag EntityTag
 ---@field pos Vector.lua
 ---@field vel Vector.lua
 ---@field move_speed? number move X pixels per second

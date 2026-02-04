@@ -1,21 +1,26 @@
 local M = {}
 
 ---@class MapZone
----@field connections string[] names of possible connections to other zones
+---@field zones string[] names of possible zones to other zones
 
 local api = require 'api'
 
-local layer = {
-    connection = '#57b9f2',
-    boss = '#fe5b59',
-    special = '#d186df',
+local layers = {
     filler = '#a5a5a7',
-    path = '#ffffff'
+    path = '#ffffff',
+    special = '#d186df',
+    boss = '#fe5b59',
+    zone = '#57b9f2',
 }
 
 local is_layer = function (name, r, g, b, a)
-    local r2, g2, b2, a2 = lume.color(layer[name])
-    return r==r2 and g==g2 and b==b2 and a==a2
+    local r2, g2, b2, a2 = lume.color(layers[name])
+    -- compare with small epsilon for float precision
+    local epsilon = 0.01
+    return math.abs(r-r2) < epsilon and 
+           math.abs(g-g2) < epsilon and 
+           math.abs(b-b2) < epsilon and 
+           math.abs(a-a2) < epsilon
 end
 
 -- -- add enemy
@@ -35,21 +40,51 @@ end
 
 ---@param start string path to image of starting level
 M.new = function(start)
-    local size = 32
+    local size = 16
     local data = love.image.newImageData(start)
+    ---@type Entity[]
+    local zones = {}
+
     for x = 0, data:getWidth()-1 do
         for y = 0, data:getHeight()-1 do
             local r,g,b,a = data:getPixel(x, y)
-            if is_layer('path', r, g, b, a) then
-                local tile = api.entity.new()
-                tile.pos:set(x*size, y*size)
-                tile.rect = {
-                    color = layer.path,
+            
+            local pos = vec2(x*size, y*size)
+            local layer
+            for key, _ in pairs(layers) do
+                if is_layer(key, r, g, b, a) then
+                    layer = key
+                    break
+                end
+            end
+
+            if layer == 'path' then
+                local e = api.entity.new()
+                e.pos = pos
+                e.rect = {
+                    color = layers.path,
                     w = size,
                     h = size,
                 }
+
+            elseif layer == 'zone' then
+                local e = api.entity.new()
+                e.tag = 'zone'
+                e.pos = pos
+                e.rect = {
+                    color = layers.zone,
+                    w = size,
+                    h = size,
+                }
+                lume.push(zones, e)
+
             end
         end
+    end
+    -- turn a random zone into a player spawn
+    local player_spawn = lume.randomchoice(zones)
+    if player_spawn then
+        player_spawn.tag = 'checkpoint'
     end
 end
 

@@ -51,6 +51,14 @@ local on_entity_died = function (me, cause)
     end
 end
 
+---@type OnEntityDied
+local on_entity_died = function (me, cause)
+    local owner = api.entity.owner(me)
+    if me.tag == 'enemy' and owner and owner.enemy_spawn then
+        owner.enemy_spawn.current_alive = owner.enemy_spawn.current_alive - 1
+    end
+end
+
 local created_zones = {}
 
 ---@param zone string
@@ -181,6 +189,34 @@ function love.update(dt)
                 config.timer = config.every
                 config.current_alive = current_alive + 1
                 log.debug "spawn enemy"
+            end
+        end
+    end
+
+    -- enemy spawn
+    for _, e in ipairs(enemy_spawns) do
+        local config = e.enemy_spawn
+        if config then
+            if config.timer and config.timer > 0 then
+                -- tick spawn timer
+                config.timer = config.timer - dt
+            end
+            if (not config.timer or config.timer <= 0) and (config.current_alive or 0) < config.max_alive then
+                -- spawn enemy
+                local enemy = api.entity.new(e)
+                enemy.tag = 'enemy'
+                enemy.body = {r=15, weight=1}
+                enemy.pos:set(400, 300)
+                enemy.hurtbox = {r=12}
+                enemy.hp = 30
+                enemy.move_speed = 50
+                enemy.ai = {
+                    patrol_radius=200,
+                    vision_radius=200,
+                    patrol_cooldown=3
+                }
+                config.timer = config.every
+                config.current_alive = config.current_alive + 1
             end
         end
     end

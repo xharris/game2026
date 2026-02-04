@@ -46,10 +46,8 @@ entity = {
 ---@field tag string
 ---@field pos Vector.lua
 ---@field vel Vector.lua
----@field accel Vector.lua
----@field friction? number [0, 1] 1 = stop immediately
----@field max_speed? number
 ---@field move_speed? number move X pixels per second
+---@field mass? number higher mass is harder to move (move speed) TODO consider using this in body collisions
 ---@field aim_dir Vector.lua
 ---@field body? Shape
 ---@field controller_id? number
@@ -149,6 +147,20 @@ local can_see = function(me, other_body)
     end
 end
 
+---@param vel Vector.lua
+---@param move Vector.lua
+---@param max_speed number
+---@param mass number
+local steer = function(vel, move, max_speed, mass)
+    local scaled = move:norm() * max_speed
+    local steer = (scaled - vel) / mass
+    -- var desired_velocity = target_position - global_position
+    -- var scaled_desired_velocity = desired_velocity.normalized() * max_speed
+
+    -- var steer = (scaled_desired_velocity - velocity) / mass
+    return vel + steer
+end
+
 local input = baton.new{
     controls = {
         join = {'mouse:1', 'button:a', 'axis:triggerright+', 'axis:triggerleft+'},
@@ -185,11 +197,11 @@ M.update = function(dt)
             hc_hitbox.remove(e.hitbox)
             hc_hurtbox.remove(e.hurtbox)
         else
-            local movex, movey = 0, 0
+            -- get move direction
+            local move = vec2()
             if e.controller_id then
                 -- controller input
-                -- move direction
-                movex, movey = input:get 'move'
+                move:set(input:get 'move')
                 -- aim direction
                 local aimx, aimy = 0, 0
                 if input:getActiveDevice() == 'joy' then
@@ -248,13 +260,14 @@ M.update = function(dt)
                 end
                 local to = ai.path_to
                 if to then
-                    local move_dir = to - e.pos
-                    if move_dir:getmag() > 10 then
+                    local target_dir = to - e.pos
+                    if target_dir:getmag() > 10 then
                         -- path to target
-                        movex, movey = move_dir:norm():unpack()
+                        move = target_dir:norm()
                     else
                         -- arrived, go on cooldown
                         ai.path_to = nil
+                        move:set(0, 0)
                         ai.patrol_timer = ai.patrol_cooldown or 0
                         state = 'patrol'
                     end
@@ -267,31 +280,11 @@ M.update = function(dt)
                     e.stun_timer = nil
                 else
                     e.stun_timer = e.stun_timer - dt
-                    movex = 0
-                    movey = 0
+                    move:set(0, 0)
                 end
             end
             if e.move_speed then
-                -- apply movement to acceleration
-                e.accel.x = movex * e.move_speed
-                e.accel.y = movey * e.move_speed
-            end
-            -- friction (only when not accelerating)
-            local f = e.friction
-            if f and e.accel:getmag() == 0 then
-                if e.stun_timer then
-                    f = min(f, const.FRICTION.STUNNED)
-                end
-                local damping = math.pow(1 - f, dt * 60)
-                e.vel.x = e.vel.x * damping
-                e.vel.y = e.vel.y * damping
-            end
-            -- apply acceleration
-            e.vel = e.vel + e.accel * dt
-            if e.max_speed then
-                -- limit speed
-                e.vel.x = clamp(e.vel.x, -e.max_speed, e.max_speed)
-                e.vel.y = clamp(e.vel.y, -e.max_speed, e.max_speed)
+                e.vel = steer(e.vel, move, e.move_speed, 10)
             end
             if e.body then
                 local body = hc_body.get(e, e.body, e.pos)

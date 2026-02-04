@@ -174,5 +174,7 @@ If you reach that point, you can **refactor gradually**.
 
 ## Resources
 
-- [datamoshing](https://www.reddit.com/r/godot/comments/1buubf1/datamoshing_compositor_effect_for_godot_43/)
+- datamoshing
+  - https://www.reddit.com/r/godot/comments/1buubf1/datamoshing_compositor_effect_for_godot_43/
+  - https://github.com/GODPUS/shaders/blob/master/datamosh/glsl/datamosh.glsl
 - [water shader](https://www.cyanilux.com/tutorials/2d-water-shader-breakdown/)

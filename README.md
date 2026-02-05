@@ -125,15 +125,15 @@ If you reach that point, you can **refactor gradually**.
 **Day 5**
 
 - [x] Magic system (data-driven)
-- [ ] Status effects on entities
+- [x] Status effects on entities
 - [ ] Magic sources in chunks
-- [ ] Magic-modified projectiles (fire, water, etc.)
-- [ ] Damage-over-time / on-hit effects
+- [x] Magic-modified projectiles (fire, water, etc.)
+- [x] Damage-over-time / on-hit effects
 - [ ] Checkpoint: save location
 - [ ] Respawn
   - [ ] Red death screen
   - [ ] Move player to checkpoint
-  - [ ] Remove enemies too close to checkpoint
+  - [ ] Remove enemies too close to checkpoint? or put chase on cooldown
   - [ ] Extreme zoom out of player on spawn
 
 ---
@@ -171,3 +171,11 @@ If you reach that point, you can **refactor gradually**.
   - https://www.reddit.com/r/godot/comments/1buubf1/datamoshing_compositor_effect_for_godot_43/
   - https://github.com/GODPUS/shaders/blob/master/datamosh/glsl/datamosh.glsl
 - [water shader](https://www.cyanilux.com/tutorials/2d-water-shader-breakdown/)
+
+## SFX
+
+https://sfbgames.itch.io/chiptone
+
+```
+eJxjYpBWlxBRYDkjwwAFDfWejGsF-iLD-P7Xh_owCXNCBGvznYRBdKX1SU4wnb1OHER3O0Pk55tD6KkhEJrhC0NgliODlA8TE_NUNpBIBeMdMRDNulQDosRSX5cXrLRBFCIwUxJCX4Y6xBZo01TbQ3Zt6RD-WSYI_R8C5WdEMtATAAABqTBG
+```

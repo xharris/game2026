@@ -1,7 +1,8 @@
 local M = {}
 
 local api = require 'api'
-local tick =require 'lib.tick'
+local tick = require 'lib.tick'
+local weakkeys = require 'lib.weakkeytable'
 
 local lerp = lume.lerp
 local rad = math.rad

@@ -82,6 +82,7 @@ entity = {
 ---@field rect? {color?:string, fill?:boolean, w:number, h:number} draw a rectangle just cause
 ---@field camera? Camera
 ---@field cull? Cull TODO
+---@field in_view? boolean in camera view?
 ---@field enemy_spawn? EnemySpawn
 ---@field z? number
 
@@ -370,6 +371,12 @@ M.update = function(dt)
                     e.pos + e.vel * dt
                 )
             end
+            if const.ENABLE_CULLING then
+                -- check if entity is in view
+                e.in_view = camera.is_visible(e.pos.x, e.pos.y)
+            else
+                e.in_view = true
+            end
             -- update camera
             local cam = e.camera
             if cam then
@@ -419,52 +426,54 @@ end
 
 M.draw = function()
     for _, e in ipairs(api.entity.entities) do
-        push()
-        translate(round(e.pos.x), round(e.pos.y))
-        -- draw rect
-        local rect = e.rect
-        if rect then
-            set_color(lume.color(rect.color or '#ffffff'))
-            rectangle(rect.fill and 'fill' or 'line', -rect.w/2, -rect.h/2, rect.w, rect.h)
-        end
-        -- draw ai vision
-        local ai = e.ai
-        if ai and ai.vision_radius then
-            set_color(lume.color(mui.YELLOW_500))
-            circle('line', 0, 0, ai.vision_radius)
-        end
-        -- draw body
-        local body = e.body
-        if body then
-            set_color(lume.color(mui.BLUE_500))
-            circle("fill", 0, 0, body.r)
-        end
-        local hurtbox = e.hurtbox
-        if hurtbox then
-            set_color(lume.color(mui.GREEN_500))
-            circle("fill", 0, 0, hurtbox.r)
-        end
-        local hitbox = e.hitbox
-        if hitbox then
-            set_color(lume.color(mui.RED_500))
-            circle("fill", 0, 0, hitbox.r)
-        end
-        -- draw ai pathing
-        local to = ai and ai.path_to or nil
-        if to then
+        if e.in_view then
             push()
-            translate(-round(e.pos.x), -round(e.pos.y))
-            set_color(lume.color(mui.YELLOW_200))
-            local size = 7
-            rectangle('line', to.x - (size/2), to.y - (size/2), size, size)
+            translate(round(e.pos.x), round(e.pos.y))
+            -- draw rect
+            local rect = e.rect
+            if rect then
+                set_color(lume.color(rect.color or '#ffffff'))
+                rectangle(rect.fill and 'fill' or 'line', -rect.w/2, -rect.h/2, rect.w, rect.h)
+            end
+            -- draw ai vision
+            local ai = e.ai
+            if ai and ai.vision_radius then
+                set_color(lume.color(mui.YELLOW_500))
+                circle('line', 0, 0, ai.vision_radius)
+            end
+            -- draw body
+            local body = e.body
+            if body then
+                set_color(lume.color(mui.BLUE_500))
+                circle("fill", 0, 0, body.r)
+            end
+            local hurtbox = e.hurtbox
+            if hurtbox then
+                set_color(lume.color(mui.GREEN_500))
+                circle("fill", 0, 0, hurtbox.r)
+            end
+            local hitbox = e.hitbox
+            if hitbox then
+                set_color(lume.color(mui.RED_500))
+                circle("fill", 0, 0, hitbox.r)
+            end
+            -- draw ai pathing
+            local to = ai and ai.path_to or nil
+            if to then
+                push()
+                translate(-round(e.pos.x), -round(e.pos.y))
+                set_color(lume.color(mui.YELLOW_200))
+                local size = 7
+                rectangle('line', to.x - (size/2), to.y - (size/2), size, size)
+                pop()
+            end
+            -- draw aim
+            if e.aim_dir:getmag() > 0 then
+                set_color(lume.color(mui.BLUE_300))
+                circle("line", round(e.aim_dir.x * 30), round(e.aim_dir.y * 30), 3)
+            end
             pop()
         end
-        -- draw aim
-        if e.aim_dir:getmag() > 0 then
-            set_color(lume.color(mui.BLUE_300))
-            circle("line", round(e.aim_dir.x * 30), round(e.aim_dir.y * 30), 3)
-        end
-        pop()
     end
 end
 

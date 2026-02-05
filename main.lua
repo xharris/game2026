@@ -66,7 +66,8 @@ local load_zone = function(zone, offset)
     ---@type Entity[]
     local entities = {}
     for _, tile in ipairs(tiles) do
-        if tile.layer == 'filler' then
+        if tile.layer == 'filler' and false then
+            -- TODO single entity with spritebatches (drawing each individually is expensive)
             -- fill in with entities
             for ix = 1, 6 do
                 for iy = 1, 6 do

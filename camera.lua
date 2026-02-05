@@ -30,4 +30,11 @@ M.to_screen = function(x, y)
     return xform:transformPoint(x, y)
 end
 
+M.is_visible = function(x, y)
+    local ww, wh = love.graphics.getDimensions()
+    local l, t = M.to_world(0, 0)
+    local r, b = M.to_world(ww, wh)
+    return x >= l and x <= r and y >= t and y <= b
+end
+
 return M

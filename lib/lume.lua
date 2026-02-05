@@ -477,7 +477,7 @@ end
 ---@generic F : function
 ---@param fn F
 ---@param ... any
----@return F
+---@return function
 function lume.fn(fn, ...)
   assert(iscallable(fn), "expected a function as the first argument")
   local args = { ... }

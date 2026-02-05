@@ -14,8 +14,7 @@ local magic = require 'magic'
 local map = require 'map'
 local camera = require 'camera'
 local mui = require 'lib.mui'
-
-local lerp = lume.lerp
+local tick = require 'lib.tick'
 
 ---@type OnEntityPrimary
 local on_entity_primary = function (e)
@@ -24,33 +23,13 @@ local on_entity_primary = function (e)
     projectile.pos:set(e.pos)
     projectile.vel:set(e.aim_dir * 500)
     projectile.hitbox = {r=10}
-    projectile.magic = {'missile'}
+    projectile.magic = {'fire'}
 end
 
 ---@type OnEntityHitboxCollide
 local on_entity_hitbox_collision = function (me, other, delta)
-    if me.magic and other.hp then
-        for i, name in lume.ripairs(me.magic) do
-            ---@type Magic?
-            local config = magic[name]
-            if config then
-                config.on_hit(other, me, delta)
-                if not config.pierce then
-                    table.remove(me.magic, i)
-                end
-            end
-        end
-        if #me.magic == 0 then
-            me.queue_free = true
-        end
-    end
-end
-
----@type OnEntityDied
-local on_entity_died = function (me, cause)
-    local owner = api.entity.owner(me)
-    if me.tag == 'enemy' and owner and owner.enemy_spawn then
-        owner.enemy_spawn.current_alive = owner.enemy_spawn.current_alive - 1
+    if me.magic then
+        magic.apply_all(me.magic, me, other, delta)
     end
 end
 
@@ -163,12 +142,14 @@ function love.load()
         player.hurtbox = {r=12}
         player.move_speed = 120
         player.camera = {weight=1}
+        player.z = 2
     end
 
     log.info('load end')
 end
 
 function love.update(dt)
+    tick.update(dt)
     local players = api.entity.find_by_tag 'player'
     local zones = api.entity.find_by_tag 'zone'
     local enemy_spawns = api.entity.find_by_tag 'enemy_spawn'
@@ -206,6 +187,7 @@ function love.update(dt)
                     vision_radius=200,
                     patrol_cooldown=3
                 }
+                enemy.z = 1
                 config.timer = config.every
                 config.current_alive = current_alive + 1
                 log.debug("spawn enemy", config.current_alive)

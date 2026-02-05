@@ -1,7 +1,9 @@
-local M = {}
+local A = {}
 
 local signal = require 'lib.signal'
 local weakkey = require 'lib.weakkeytable'
+
+A.curve = require 'curve'
 
 local E = {}
 
@@ -65,6 +67,6 @@ E.find_by_tag = function(tag)
     return out
 end
 
-M.entity = E
+A.entity = E
 
-return M
+return A

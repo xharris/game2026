@@ -31,7 +31,9 @@ entity = {
 
 ---@class Magic
 ---@field pierce? boolean
----@field on_hit fun(target:Entity, me:Entity, delta: Vector.lua)
+---@field ticks? number
+---@field duration? number
+---@field apply fun(target:Entity, me:Entity, delta: Vector.lua, tick:number)
 
 ---@class Ai
 ---@field state? 'patrol'|'chase'
@@ -52,6 +54,10 @@ entity = {
 ---@field current_alive? number
 ---@field timer? number
 
+---@class MagicTick
+---@field ticks_left number
+---@field name string magic name
+
 ---@class Cull TODO cull entity if its not close enough to the camera bounds
 
 ---@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'magic'
@@ -70,12 +76,14 @@ entity = {
 ---@field hurtbox? Shape
 ---@field hitbox? Shape
 ---@field magic? string[]
+---@field magic_tick? MagicTick[] apply magic effect to target every X sec
 ---@field ai? Ai
 ---@field stun_timer? number
 ---@field rect? {color?:string, fill?:boolean, w:number, h:number} draw a rectangle just cause
 ---@field camera? Camera
 ---@field cull? Cull TODO
 ---@field enemy_spawn? EnemySpawn
+---@field z? number
 
 local push = lume.fn(love.graphics.push, 'all')
 local pop = love.graphics.pop
@@ -88,7 +96,7 @@ local abs = math.abs
 local clamp = lume.clamp
 local round = lume.round
 local rad = math.rad
-local min = math.min
+local sort = table.sort
 
 M.world_body = hc.new(64)
 M.world_hitbox = hc.new(64)
@@ -206,14 +214,25 @@ local input = baton.new{
     },
 }
 
+local last_z = weakkeys()
+
+local z_sort = function(a, b)
+    return (a.z or 0) < (b.z or 0)
+end
+
 M.update = function(dt)
     input:update()
 
     local camera_total_position = vec2()
     local camera_total_weight = 0
 
+    local need_sort = false
     for i, e in lume.ripairs(api.entity.entities) do
         ---@cast e Entity
+        if e.z ~= last_z[e] then
+            need_sort = true
+            last_z[e] = e.z
+        end
         if e.queue_free then
             table.remove(api.entity.entities, i)
             hc_body.remove(e.body)
@@ -391,6 +410,10 @@ M.update = function(dt)
         camera.pos = camera_total_position / camera_total_weight
         camera.pos.x = round(camera.pos.x)
         camera.pos.y = round(camera.pos.y)
+    end
+
+    if need_sort then
+        sort(api.entity.entities, z_sort)
     end
 end
 

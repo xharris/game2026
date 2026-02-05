@@ -117,8 +117,8 @@ If you reach that point, you can **refactor gradually**.
 - [x] Load/Activate zone when nearby
 - Tiles
   - [x] Enemy spawn
-  - [ ] Filler
-- [ ] Water background color
+  - [x] Filler
+- [x] Water background color
 
 ---
 

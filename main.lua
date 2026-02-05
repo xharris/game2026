@@ -13,6 +13,9 @@ local entity = require 'entity'
 local magic = require 'magic'
 local map = require 'map'
 local camera = require 'camera'
+local mui = require 'lib.mui'
+
+local lerp = lume.lerp
 
 ---@type OnEntityPrimary
 local on_entity_primary = function (e)
@@ -64,7 +67,8 @@ local created_zones = {}
 ---@param zone string
 ---@param offset? Vector.lua
 local load_zone = function(zone, offset)
-    local size = 16
+    love.graphics.setBackgroundColor(lume.color(mui.CYAN_100))
+    local size = 128
     offset = offset or vec2()
     if created_zones[zone..tostring(offset)] then
         return
@@ -83,29 +87,46 @@ local load_zone = function(zone, offset)
     ---@type Entity[]
     local entities = {}
     for _, tile in ipairs(tiles) do
-        local e = api.entity.new()
-        e.pos = tile.pos * size
-        e.pos = e.pos
-        e.tag = tile.layer
-        e.rect = {
-            fill = true,
-            color = tile.color,
-            w=size,
-            h=size,
-        }
-        if e.tag == 'zone' then
-            lume.push(zone_tiles, tile)
-        end
-        if e.tag == 'enemy_spawn' then
-            e.enemy_spawn = {
-                enemies = {
-                    {name='slime', weight=1}
-                },
-                every = 3,
-                max_alive = 3,
+        if tile.layer == 'filler' then
+            -- fill in with entities
+            for ix = 1, 6 do
+                for iy = 1, 6 do
+                    local e = api.entity.new()
+                    local tile_pos = vec2(ix, iy) * (size/6) - (vec2(size, size) / 2)
+                    e.pos = (tile.pos * size) + tile_pos
+                    e.rect = {
+                        fill = true,
+                        color = tile.color,
+                        w = 5,
+                        h = 5,
+                    }
+                    lume.push(entities, e)
+                end
+            end
+        else
+            local e = api.entity.new()
+            e.pos = tile.pos * size
+            e.tag = tile.layer
+            e.rect = {
+                fill = true,
+                color = tile.color,
+                w=size,
+                h=size,
             }
+            if e.tag == 'zone' then
+                lume.push(zone_tiles, tile)
+            end
+            if e.tag == 'enemy_spawn' then
+                e.enemy_spawn = {
+                    enemies = {
+                        {name='slime', weight=1} -- TODO
+                    },
+                    every = 3,
+                    max_alive = 1,
+                }
+            end
+            lume.push(entities, e)
         end
-        lume.push(entities, e)
     end
 
     -- offset by random zone marker
@@ -133,7 +154,6 @@ function love.load()
     if not player_spawn then
         log.error("could not find a player spawn")
     else
-        log.info("spawn player", player_spawn.pos)
         -- add player
         local player = api.entity.new()
         player.tag = 'player'
@@ -188,7 +208,7 @@ function love.update(dt)
                 }
                 config.timer = config.every
                 config.current_alive = current_alive + 1
-                log.debug "spawn enemy"
+                log.debug("spawn enemy", config.current_alive)
             end
         end
     end

@@ -155,7 +155,7 @@ local can_see = function(me, other_body)
     local ai = me.ai
     ---@type Entity?
     local other = other_body._entity
-    if ai and other and other ~= me and 
+    if ai and other and other.tag ~= me.tag and 
         abs((me.pos - other.pos):getmag()) <= ai.vision_radius and
         other_body:intersectsRay(
             me.pos.x, me.pos.y, 
@@ -430,7 +430,7 @@ M.draw = function()
         local to = ai and ai.path_to or nil
         if to then
             push()
-            love.graphics.origin()
+            translate(-round(e.pos.x), -round(e.pos.y))
             set_color(lume.color(mui.YELLOW_200))
             local size = 7
             rectangle('line', to.x - (size/2), to.y - (size/2), size, size)

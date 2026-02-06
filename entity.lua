@@ -30,7 +30,6 @@ entity = {
 ---@field weight? number
 
 ---@class Magic
----@field pierce? boolean
 ---@field ticks? number
 ---@field duration? number
 ---@field apply fun(target:Entity, me:Entity, delta: Vector.lua, tick:number)
@@ -58,11 +57,18 @@ entity = {
 ---@field ticks_left number
 ---@field name string magic name
 
+---@class Item
+---@field can_transfer? boolean
+---@field restore_after_remove? number seconds
+---@field restore_after_transfer? number seconds
+---@field restore_timer? any tick.lua timer
+
 ---@class Cull TODO cull entity if its not close enough to the camera bounds
 
 ---@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'magic'
 
 ---@class Entity
+---@field _id? string
 ---@field disabled? boolean
 ---@field zone_disabled? boolean
 ---@field zone_id? number
@@ -88,6 +94,9 @@ entity = {
 ---@field in_view? boolean in camera view?
 ---@field enemy_spawn? EnemySpawn
 ---@field z? number
+---@field item? Item this entity is treated as an item
+---@field wand? string -> Entity
+---@field storage? string -> Entity
 
 local push = lume.fn(love.graphics.push, 'all')
 local pop = love.graphics.pop
@@ -241,10 +250,21 @@ M.update = function(dt)
             -- noop
         elseif e.queue_free then
             table.remove(api.entity.entities, i)
+            api.entity.signal_freed.emit(e)
             hc_body.remove(e.body)
             hc_hitbox.remove(e.hitbox)
             hc_hurtbox.remove(e.hurtbox)
         else
+            if e.tag == 'player' or e.tag == 'enemy' then
+                e.z = const.Z.ACTOR
+            elseif e.tag == 'magic' then
+                e.z = const.Z.MAGIC
+            elseif e.tag == 'zone' or e.tag == 'player_spawn' or e.tag == 'enemy_spawn' then
+                e.z = const.Z.MAP_TILE
+            else
+                e.z = 0
+            end
+
             -- get move direction
             local move = vec2()
             if e.controller_id then
@@ -381,6 +401,11 @@ M.update = function(dt)
                 e.in_view = camera.is_visible(e.pos.x, e.pos.y)
             else
                 e.in_view = true
+            end
+            -- update stored item position
+            local stored = e.storage and api.entity.get(e.storage) or nil
+            if stored then
+                stored.pos:set(e.pos)
             end
             -- update camera
             local cam = e.camera

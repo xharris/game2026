@@ -21,8 +21,19 @@ return {
                     w=18,
                     h=9,
                 }
+                -- add fire to camp... fire
                 campfire.pos = pos:clone()
-
+                local fire = api.entity.new(campfire)
+                fire.tag = 'magic'
+                fire.magic = {'fire'}
+                fire.item = {
+                    can_transfer = true,
+                    restore_after_transfer = 3,
+                    restore_after_remove = 3,
+                }
+                fire.hitbox = {r=10}
+                fire.pos = campfire.pos:clone()
+                campfire.storage = fire._id
             end
         }
     },

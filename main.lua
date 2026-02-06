@@ -42,6 +42,24 @@ local on_entity_died = function (me, cause)
     end
 end
 
+---@type OnEntityFreed
+local on_entity_freed = function (me)
+    local owner = api.entity.owner(me)
+    if owner and me.item and me.item.restore_after_remove then
+        -- restore item after time
+        log.debug("restore", me.tag, "after", me.item.restore_after_remove)
+        me.item.restore_timer = tick.delay(
+            function()
+                local clone = api.entity.clone(me)
+                if owner.storage == me._id then
+                    owner.storage = clone._ids
+                end
+            end,
+            me.item.restore_after_remove
+        )
+    end
+end
+
 function love.load()
     log.serialize = lume.serialize
     log.info('load begin')
@@ -49,6 +67,7 @@ function love.load()
     api.entity.signal_primary.on(on_entity_primary)
     api.entity.signal_hitbox_collision.on(on_entity_hitbox_collision)
     api.entity.signal_died.on(on_entity_died)
+    api.entity.signal_freed.on(on_entity_freed)
 
     zone.load('map.forest.init')
 
@@ -67,7 +86,6 @@ function love.load()
         player.hurtbox = {r=12}
         player.move_speed = 120
         player.camera = {weight=1}
-        player.z = 2
     end
 
     log.info('load end')

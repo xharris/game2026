@@ -87,12 +87,7 @@ M.load = function(path, from_zone)
     local starting_pos = starting_zone.pos * size
     -- calculate offset to align zones
     local offset = - starting_pos
-    if from_zone then
-        offset = offset + from_zone.pos
-        log.debug("create zone", zone.name, "offset by", offset, "to align with", from_zone.pos)
-    else
-        log.debug("create zone", zone.name, "at starting zone", offset)
-    end
+    log.debug("create zone", zone.name, "at offset", offset)
     -- spawn entities from tiles
     for _, tile in ipairs(tiles) do
         if tile.layer == 'special' and zone.special then
@@ -134,7 +129,6 @@ M.load = function(path, from_zone)
                 -- new zone tiles should not trigger loads themselves
                 e.zone_disabled = from_zone ~= nil
                 e.zone_id = id
-                e.z = 30
             end
 
             if e.tag == 'enemy_spawn' then

@@ -43,30 +43,55 @@ end
 
 local created_zones = {}
 
----@param zone string
+---@class Zone
+---@field image string
+---@field map_layers? MapLayers
+---@field bg_color? string
+---@field size? number
+---@field special? table<string, MapSpecial>
+---@field enemy_pool? Entity[]
+
+---@class MapSpecial
+---@field new fun(pos:Vector.lua, tile_size:number)
+
+---@type Entity[]
+local enemy_pool = {}
+
+---@param name string
 ---@param offset? Vector.lua
-local load_zone = function(zone, offset)
-    love.graphics.setBackgroundColor(lume.color(mui.CYAN_100))
-    local size = 128
+local load_zone = function(name, offset)
+    name = 'map.'..name..'.init'
+    ---@type Zone
+    local zone = require(name) or {}
+    love.graphics.setBackgroundColor(lume.color(zone.bg_color or mui.BLACK))
+    local size = zone.size or 128
     offset = offset or vec2()
-    if created_zones[zone..tostring(offset)] then
+    if created_zones[name..tostring(offset)] then
         return
     end
-    created_zones[zone..tostring(offset)] = true
-    local tiles = map.load(zone, {
+    enemy_pool = zone.enemy_pool or {}
+    created_zones[name..tostring(offset)] = true
+    local tiles = map.load(zone.image, zone.map_layers or {
         filler      = '#a5a5a7',
         path        = '#ffffff',
         special     = '#d186df',
         enemy_spawn = '#fe5b59',
         zone        = '#57b9f2',
     })
-
     ---@type MapTile[]
     local zone_tiles = {}
     ---@type Entity[]
     local entities = {}
     for _, tile in ipairs(tiles) do
-        if tile.layer == 'filler' and false then
+        if tile.layer == 'special' and zone.special then
+            local name = lume.randomchoice(lume.keys(zone.special))
+            ---@type MapSpecial?
+            local special = zone.special[name]
+            if special then
+                special.new(tile.pos * size, size)
+            end
+            
+        elseif tile.layer == 'filler' and false then
             -- TODO single entity with spritebatches (drawing each individually is expensive)
             -- fill in with entities
             for ix = 1, 6 do
@@ -127,7 +152,7 @@ function love.load()
     api.entity.signal_hitbox_collision.on(on_entity_hitbox_collision)
     api.entity.signal_died.on(on_entity_died)
 
-    load_zone('map/forest/forest.png')
+    load_zone('forest')
 
     local zones = api.entity.find_by_tag('zone')
     local player_spawn = lume.randomchoice(zones)
@@ -160,7 +185,7 @@ function love.update(dt)
         for _, z in ipairs(zones) do
             local dist = (p.pos - z.pos):getmag()
             if dist < 30 then
-                load_zone('map/forest/forest.png', z.pos)
+                load_zone('forest', z.pos)
             end
         end
     end
@@ -168,30 +193,30 @@ function love.update(dt)
     -- enemy spawn
     for _, e in ipairs(enemy_spawns) do
         local config = e.enemy_spawn
-        if config then
+        if config and #enemy_pool > 0 then
             if config.timer and config.timer > 0 then
                 -- tick spawn timer
                 config.timer = config.timer - dt
             end
             local current_alive = config.current_alive or 0
             if (not config.timer or config.timer <= 0) and current_alive < config.max_alive then
+                local enemy_template = lume.randomchoice(enemy_pool)
                 -- spawn enemy
+                local spawn_pos = e.pos:clone()
                 local enemy = api.entity.new(e)
                 enemy.tag = 'enemy'
-                enemy.body = {r=15, weight=1}
-                enemy.pos:set(e.pos)
-                enemy.hurtbox = {r=12}
-                enemy.hp = 8
-                enemy.move_speed = 50
-                enemy.ai = {
-                    patrol_radius=200,
-                    vision_radius=200,
-                    patrol_cooldown=3
-                }
+                -- copy template properties
+                enemy.body = enemy_template.body and lume.clone(enemy_template.body) or nil
+                enemy.hurtbox = enemy_template.hurtbox and lume.clone(enemy_template.hurtbox) or nil
+                enemy.hitbox = enemy_template.hitbox and lume.clone(enemy_template.hitbox) or nil
+                enemy.hp = enemy_template.hp
+                enemy.move_speed = enemy_template.move_speed
+                enemy.ai = enemy_template.ai and lume.clone(enemy_template.ai) or nil
                 enemy.z = 1
+                enemy.pos:set(spawn_pos)
                 config.timer = config.every
                 config.current_alive = current_alive + 1
-                log.debug("spawn enemy", config.current_alive)
+                log.debug("spawn enemy", config.current_alive, "body:", enemy.body, "hurtbox:", enemy.hurtbox, "hp:", enemy.hp)
             end
         end
     end
@@ -208,6 +233,8 @@ function love.update(dt)
                 -- spawn enemy
                 local enemy = api.entity.new(e)
                 enemy.tag = 'enemy'
+
+
                 enemy.body = {r=15, weight=1}
                 enemy.pos:set(400, 300)
                 enemy.hurtbox = {r=12}

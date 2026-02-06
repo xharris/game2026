@@ -64,12 +64,12 @@ entity = {
 
 ---@class Entity
 ---@field queue_free? boolean remove from system
----@field tag EntityTag
----@field pos Vector.lua
----@field vel Vector.lua
+---@field tag? EntityTag
+---@field pos? Vector.lua
+---@field vel? Vector.lua
 ---@field move_speed? number move X pixels per second
 ---@field mass? number higher mass is harder to move (move speed) TODO consider using this in body collisions
----@field aim_dir Vector.lua
+---@field aim_dir? Vector.lua
 ---@field body? Shape
 ---@field controller_id? number
 ---@field hp? number

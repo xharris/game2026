@@ -1,5 +1,7 @@
 local M = {}
 
+---@alias MapLayers table<string, string> 
+
 ---@class MapZone
 ---@field zones string[] names of possible zones to other zones
 
@@ -11,6 +13,7 @@ local M = {}
 local api = require 'api'
 
 ---@param start string path to image of starting level
+---@param layers MapLayers {name:color}
 M.load = function(start, layers)
     local is_layer = function (name, r, g, b, a)
         local r2, g2, b2, a2 = lume.color(layers[name])

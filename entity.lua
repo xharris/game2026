@@ -63,6 +63,9 @@ entity = {
 ---@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'magic'
 
 ---@class Entity
+---@field disabled? boolean
+---@field zone_disabled? boolean
+---@field zone_id? number
 ---@field queue_free? boolean remove from system
 ---@field tag? EntityTag
 ---@field pos? Vector.lua
@@ -234,7 +237,9 @@ M.update = function(dt)
             need_sort = true
             last_z[e] = e.z
         end
-        if e.queue_free then
+        if e.disabled then
+            -- noop
+        elseif e.queue_free then
             table.remove(api.entity.entities, i)
             hc_body.remove(e.body)
             hc_hitbox.remove(e.hitbox)
@@ -426,7 +431,7 @@ end
 
 M.draw = function()
     for _, e in ipairs(api.entity.entities) do
-        if e.in_view then
+        if e.in_view and not e.disabled then
             push()
             translate(round(e.pos.x), round(e.pos.y))
             -- draw rect
@@ -471,6 +476,11 @@ M.draw = function()
             if e.aim_dir:getmag() > 0 then
                 set_color(lume.color(mui.BLUE_300))
                 circle("line", round(e.aim_dir.x * 30), round(e.aim_dir.y * 30), 3)
+            end
+            -- draw zone id
+            if e.zone_id then
+                set_color(lume.color(mui.BLACK))
+                love.graphics.print('zone '..tostring(e.zone_id)..(e.zone_disabled and '(disabled)' or ''))
             end
             pop()
         end

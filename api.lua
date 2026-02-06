@@ -19,6 +19,9 @@ E.signal_died = signal.new 'entity_died'
 ---@type Entity[]
 E.entities = {}
 
+---@type Entity[]? all entities created will also be added to this table
+E.group = nil
+
 ---@type table<Entity, Entity>
 local owners = weakkey()
 
@@ -36,6 +39,9 @@ E.new = function(owner)
         owners[e] = owner
     end
     lume.push(E.entities, e)
+    if E.group then
+        lume.push(E.group, e)
+    end
     return e
 end
 

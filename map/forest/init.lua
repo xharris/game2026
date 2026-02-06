@@ -1,17 +1,28 @@
 local M = {}
 
 local mui = require 'lib.mui'
+local api = require 'api'
 
 ---@type Zone
 return {
-    size = 20,
+    name = 'forest',
+    size = 32,
     image = 'map/test/test.png',
     bg_color = mui.CYAN_100,
     special = {
         campfire = {
             new = function (pos, tile_size)
                 -- create campfire
-                log.debug("spawn campfire")
+                log.debug("spawn campfire", pos)
+                local campfire = api.entity.new()
+                campfire.rect = {
+                    fill = true,
+                    color=mui.BROWN_500,
+                    w=18,
+                    h=9,
+                }
+                campfire.pos = pos:clone()
+
             end
         }
     },
@@ -23,8 +34,8 @@ return {
             hp = 8,
             move_speed = 50,
             ai = {
-                patrol_radius=200,
-                vision_radius=200,
+                patrol_radius=20,
+                vision_radius=50,
                 patrol_cooldown=3
             },
         }

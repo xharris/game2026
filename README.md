@@ -127,8 +127,8 @@ If you reach that point, you can **refactor gradually**.
 - [x] Magic system (data-driven)
 - [x] Status effects on entities
 - [x] Special map tile: campfire
-- [ ] Point at magic source
-  - source goes on longish cooldown?
+- [x] Point at magic source
+  - [ ] source goes on longish cooldown?
 - [x] Magic-modified projectiles (fire, water, etc.)
 - [x] Damage-over-time / on-hit effects
 - [ ] Checkpoint: save location

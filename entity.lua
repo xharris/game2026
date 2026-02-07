@@ -47,7 +47,6 @@ entity = {
 ---@field weight number
 
 ---@class EnemySpawn
----@field enemies {name:string, weight?:number}[]
 ---@field every number spawn enemy every X seconds
 ---@field max_alive number
 ---@field current_alive? number
@@ -104,12 +103,12 @@ entity = {
 ---@field camera? Camera
 ---@field cull? Cull TODO
 ---@field in_view? boolean in camera view?
----@field enemy_spawn? EnemySpawn
 ---@field z? number
 ---@field item? Item this entity is treated as an item
 ---@field item_transfer? ItemTransfer item is being transfered
 ---@field item_wand? string -> Entity
 ---@field item_stored? string -> Entity
+---@field enemy_spawn? EnemySpawn TODO remove?
 
 local push = lume.fn(love.graphics.push, 'all')
 local pop = love.graphics.pop

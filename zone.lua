@@ -42,6 +42,7 @@ M.load = function(path, from_zone)
         log.error('did not find zone', path)
         return
     end
+    enemy_pool = zone.enemy_pool
     zones[zone.name] = zone
     -- disable other loaded zones (except from_zone)
     for _, prev_zone in ipairs(loaded_zones) do
@@ -133,9 +134,6 @@ M.load = function(path, from_zone)
 
             if e.tag == 'enemy_spawn' then
                 e.enemy_spawn = {
-                    enemies = {
-                        {name='slime', weight=1} -- TODO
-                    },
                     every = 3,
                     max_alive = 1,
                 }
@@ -179,6 +177,7 @@ M.update = function(dt)
             end
             local current_alive = config.current_alive or 0
             if (not config.timer or config.timer <= 0) and current_alive < config.max_alive then
+                log.debug("spawn enemy")
                 local enemy_template = lume.randomchoice(enemy_pool)
                 -- spawn enemy
                 local spawn_pos = e.pos:clone()

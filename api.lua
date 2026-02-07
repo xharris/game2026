@@ -187,6 +187,7 @@ A.update = function(dt)
                         tick.delay(function ()
                             local cloned = E.clone(e)
                             E.owner(cloned, from)
+                            cloned.pos:set(transfer.start_pos)
                             cloned.vel:set(0, 0)
                             -- cloned.pos:set(from.pos)
                             from[transfer.from_key] = cloned._id

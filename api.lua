@@ -3,6 +3,10 @@ local A = {}
 local signal = require 'lib.signal'
 local weakkey = require 'lib.weakkeytable'
 local copy = require 'lib.copy'
+local tick = require 'lib.tick'
+
+local lerp = lume.lerp
+local min = math.min
 
 A.curve = require 'curve'
 
@@ -34,6 +38,18 @@ local id = 0
 ---@type table<string, Entity>
 local entity_by_id = {}
 
+local entities_by_tag = {}
+
+E.changed = function()
+    entities_by_tag = {}
+    for _, e in ipairs(E.entities) do
+        if not entities_by_tag[e.tag] then
+            entities_by_tag[e.tag] = {}
+        end
+        lume.push(entities_by_tag[e.tag], e)
+    end
+end
+
 ---@param owner? Entity
 E.new = function(owner)
     id = id + 1
@@ -54,6 +70,7 @@ E.new = function(owner)
     end
     e._id = tostring(id)
     entity_by_id[e._id] = e
+    E.changed()
     return e
 end
 
@@ -88,15 +105,9 @@ E.take_damage = function(me, amt, source)
 end
 
 ---@param tag EntityTag
+---@return Entity[]
 E.find_by_tag = function(tag)
-    ---@type Entity[]
-    local out = {}
-    for _, e in ipairs(E.entities) do
-        if e.tag == tag then
-            lume.push(out, e)
-        end
-    end
-    return out
+    return entities_by_tag[tag] or {}
 end
 
 ---@param e Entity
@@ -108,7 +119,7 @@ E.clone = function(e)
         elseif vector.isvector(v) then
             ---@cast v Vector.lua
             c[k] = v:clone()
-        else
+        elseif k ~= '_id' then
             c[k] = v
         end
     end
@@ -120,6 +131,78 @@ A.entity = E
 
 local I = {}
 
+---@param from Entity
+---@param from_key ItemKey
+---@param to Entity
+---@param to_key ItemKey
+I.transfer = function(from, from_key, to, to_key)
+    local item = E.get(from[from_key])
+    log.debug("transfer magic")
+    if to[to_key] ~= nil then
+        -- can't transfer if item already in that slot
+        log.debug(to.tag, to_key, "is full")
+        return
+    end
+    if item then
+        item.item_transfer = {
+            start_pos = item.pos:clone(),
+            from = from._id,
+            from_key = from_key,
+            to = to._id,
+            duration = 1,
+            t = 0,
+            to_key = to_key,
+        }
+    else
+        log.warn("item not found", from.tag, from_key)
+    end
+    from[from_key] = nil
+    return item
+end
 
+A.item = I
+
+A.update = function(dt)
+    for _, e in ipairs(E.entities) do
+        local transfer = e.item_transfer
+        if transfer then
+            local from = E.get(transfer.from)
+            local to = E.get(transfer.to)
+            local target_pos = to.pos
+            if transfer.to_key == 'item_wand' and to.aim_dir then
+                target_pos = to.pos + (to.aim_dir * 30)
+            end
+ 
+            if not to or not from or not target_pos or transfer.t > transfer.duration then
+                -- finished transfer
+                log.debug("transfer done")
+                e.item_transfer = nil
+                if to then
+                    -- set owner to destination entity
+                    to[transfer.to_key] = e._id
+                    E.owner(e, to)
+                    -- restore in source entity after seconds
+                    if from and e.item.restore_after_transfer then
+                        log.debug("restore after", e.item.restore_after_transfer, "sec to", transfer.from_key)
+                        tick.delay(function ()
+                            local cloned = E.clone(e)
+                            E.owner(cloned, from)
+                            cloned.vel:set(0, 0)
+                            -- cloned.pos:set(from.pos)
+                            from[transfer.from_key] = cloned._id
+                        end, e.item.restore_after_transfer)
+                    end
+                else
+                    log.warn("could not find transfer dest")
+                end
+            else
+                transfer.t = transfer.t + dt
+                local progress = transfer.t / min(transfer.duration, 1)
+                e.pos.x = lerp(from.pos.x, target_pos.x, progress)
+                e.pos.y = lerp(from.pos.y, target_pos.y, progress)
+            end
+        end
+    end
+end
 
 return A

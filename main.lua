@@ -19,12 +19,19 @@ local zone = require 'zone'
 
 ---@type OnEntityPrimary
 local on_entity_primary = function (e)
-    local projectile = api.entity.new(e)
-    projectile.tag = 'magic'
-    projectile.pos:set(e.pos)
-    projectile.vel:set(e.aim_dir * 500)
-    projectile.hitbox = {r=10}
-    projectile.magic = {'fire'}
+    local wand_item = e.item_wand and api.entity.get(e.item_wand) or nil
+    if wand_item then
+        -- 'unequip'
+        e.item_wand = nil
+        tick.delay(function ()
+            local cloned = api.entity.clone(wand_item)
+            cloned.vel:set(0, 0)
+            e.item_wand = cloned._id
+        end, 1)
+        -- shoot magic
+        wand_item.vel:set(e.aim_dir * 500)
+        wand_item.hitbox = {r=10}
+    end
 end
 
 ---@type OnEntityHitboxCollide
@@ -42,24 +49,6 @@ local on_entity_died = function (me, cause)
     end
 end
 
----@type OnEntityFreed
-local on_entity_freed = function (me)
-    local owner = api.entity.owner(me)
-    if owner and me.item and me.item.restore_after_remove then
-        -- restore item after time
-        log.debug("restore", me.tag, "after", me.item.restore_after_remove)
-        me.item.restore_timer = tick.delay(
-            function()
-                local clone = api.entity.clone(me)
-                if owner.storage == me._id then
-                    owner.storage = clone._ids
-                end
-            end,
-            me.item.restore_after_remove
-        )
-    end
-end
-
 function love.load()
     log.serialize = lume.serialize
     log.info('load begin')
@@ -67,7 +56,7 @@ function love.load()
     api.entity.signal_primary.on(on_entity_primary)
     api.entity.signal_hitbox_collision.on(on_entity_hitbox_collision)
     api.entity.signal_died.on(on_entity_died)
-    api.entity.signal_freed.on(on_entity_freed)
+    -- api.entity.signal_freed.on(on_entity_freed)
 
     zone.load('map.forest.init')
 
@@ -95,6 +84,37 @@ function love.update(dt)
     tick.update(dt)
     zone.update(dt)
     entity.update(dt)
+    api.update(dt)
+
+    local players = api.entity.find_by_tag 'player'
+    local magic_source = api.entity.find_by_tag 'magic_source'
+
+    for _, e in ipairs(api.entity.entities) do
+        local stored = e.item_stored and api.entity.get(e.item_stored) or nil
+        if stored then
+            -- lock storage position to center of entity
+            stored.pos:set(e.pos)
+        end
+        local wand = e.item_wand and api.entity.get(e.item_wand) or nil
+        if wand and e.aim_dir then
+            -- lock magic position to wand position
+            wand.pos:set(e.pos + (e.aim_dir * 30))
+        end
+    end
+
+    for _, p in ipairs(players) do
+        for _, m in ipairs(magic_source) do
+            if m.item_stored then
+                local dist = m.pos:dist(p.pos)
+                local angle = (m.pos - p.pos):heading()
+                local aim_angle = p.aim_dir:heading()
+                if dist < 200 and math.abs(angle - aim_angle) < math.rad(10) then
+                    -- transfer magic
+                    api.item.transfer(m, 'item_stored', p, 'item_wand')
+                end
+            end
+        end
+    end
 end
 
 function love.draw()

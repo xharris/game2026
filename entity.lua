@@ -57,15 +57,27 @@ entity = {
 ---@field ticks_left number
 ---@field name string magic name
 
+---@alias ItemKey 'item_stored'|'item_wand'
+
+---@class ItemTransfer
+---@field start_pos Vector.lua
+---@field from string -> Entity
+---@field from_key ItemKey
+---@field to string -> Entity
+---@field to_key ItemKey
+---@field t number
+---@field duration number
+
 ---@class Item
 ---@field can_transfer? boolean
+---@field transfer_duration? number
 ---@field restore_after_remove? number seconds
 ---@field restore_after_transfer? number seconds
 ---@field restore_timer? any tick.lua timer
 
 ---@class Cull TODO cull entity if its not close enough to the camera bounds
 
----@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'magic'
+---@alias EntityTag 'entity'|'player'|'enemy'|'enemy_spawn'|'player_spawn'|'zone'|'magic'|'magic_source'
 
 ---@class Entity
 ---@field _id? string
@@ -95,8 +107,9 @@ entity = {
 ---@field enemy_spawn? EnemySpawn
 ---@field z? number
 ---@field item? Item this entity is treated as an item
----@field wand? string -> Entity
----@field storage? string -> Entity
+---@field item_transfer? ItemTransfer item is being transfered
+---@field item_wand? string -> Entity
+---@field item_stored? string -> Entity
 
 local push = lume.fn(love.graphics.push, 'all')
 local pop = love.graphics.pop
@@ -228,6 +241,7 @@ local input = baton.new{
 }
 
 local last_z = weakkeys()
+local last_tag = weakkeys()
 
 local z_sort = function(a, b)
     return (a.z or 0) < (b.z or 0)
@@ -240,11 +254,16 @@ M.update = function(dt)
     local camera_total_weight = 0
 
     local need_sort = false
+    local need_changed = false
     for i, e in lume.ripairs(api.entity.entities) do
         ---@cast e Entity
         if e.z ~= last_z[e] then
             need_sort = true
             last_z[e] = e.z
+        end
+        if e.tag ~= last_tag[e] then
+            need_changed = true
+            last_tag[e] = e.tag
         end
         if e.disabled then
             -- noop
@@ -254,6 +273,7 @@ M.update = function(dt)
             hc_body.remove(e.body)
             hc_hitbox.remove(e.hitbox)
             hc_hurtbox.remove(e.hurtbox)
+            api.entity.changed()
         else
             if e.tag == 'player' or e.tag == 'enemy' then
                 e.z = const.Z.ACTOR
@@ -403,7 +423,7 @@ M.update = function(dt)
                 e.in_view = true
             end
             -- update stored item position
-            local stored = e.storage and api.entity.get(e.storage) or nil
+            local stored = e.item_stored and api.entity.get(e.item_stored) or nil
             if stored then
                 stored.pos:set(e.pos)
             end
@@ -451,6 +471,9 @@ M.update = function(dt)
 
     if need_sort then
         sort(api.entity.entities, z_sort)
+    end
+    if need_changed then
+        api.entity.changed()
     end
 end
 

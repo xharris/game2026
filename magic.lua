@@ -26,7 +26,11 @@ end
 ---@param delta Vector.lua
 ---@param ticks_left? number
 M.apply = function(magic, me, target, delta, ticks_left)
-    if target_is_owner(target, me) then
+    if  me.item_transfer or
+        me._id == target._id or
+        target.tag == 'magic' or
+        target_is_owner(target, me)
+    then
         return false
     end
     ---@type Magic

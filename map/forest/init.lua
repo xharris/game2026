@@ -15,14 +15,15 @@ return {
                 -- create campfire
                 log.debug("spawn campfire", pos)
                 local campfire = api.entity.new()
+                campfire.tag = 'magic_source'
                 campfire.rect = {
                     fill = true,
                     color=mui.BROWN_500,
                     w=18,
                     h=9,
                 }
-                -- add fire to camp... fire
                 campfire.pos = pos:clone()
+                -- create fire magic
                 local fire = api.entity.new(campfire)
                 fire.tag = 'magic'
                 fire.magic = {'fire'}
@@ -33,7 +34,8 @@ return {
                 }
                 fire.hitbox = {r=10}
                 fire.pos = campfire.pos:clone()
-                campfire.storage = fire._id
+                -- add fire to camp... fire
+                campfire.item_stored = fire._id
             end
         }
     },
